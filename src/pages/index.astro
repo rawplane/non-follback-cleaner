@@ -5,15 +5,20 @@ import Chip from "../components/chip.astro";
 // Put all your links here
 const links: Link[] = [
   {
-    desc: "Example Project", // The text that will be rendered
-    link: "example.com", // The link
-    icon: "fa-solid fa-home", // An icon from Font Awesome: https://fontawesome.com/search?o=r&m=free
+    desc: "Website", // The text that will be rendered
+    link: "76raw.vercel.app", // The link
+    icon: "fa-solid fa-window-maximize", // An icon from Font Awesome: https://fontawesome.com/search?o=r&m=free
   },
   {
-    desc: "Cool Project",
-    link: "example.com",
-    icon: "fa-solid fa-store",
+    desc: "Finowl",
+    link: "finowl.vercel.app",
+    icon: "fa-solid fa-link",
   },
+  {
+    desc: "Metoraw",
+    link: "76raw.vercel.app/segera-hadir",
+    icon: "fa-solid fa-link", 
+  }
 ];
 ---
 
@@ -30,17 +35,17 @@ const links: Link[] = [
       referrerpolicy='no-referrer'
     />
     <meta name='generator' content={Astro.generator} />
-    <meta name='description' content='Useful links of Neville Brem' />
-    <meta name='author' content='Neville Brem' />
-    <meta property='og:title' content='Neville Brem' />
+    <meta name='description' content='Useful links of 76RAW' />
+    <meta name='author' content='76RAW' />
+    <meta property='og:title' content='76RAW' />
     <meta property='og:image' content='favicon.png' />
-    <meta property='og:description' content='Linktree of Neville Brem' />
-    <meta property='twitter:description' content='Linktree of Neville Brem' />
-    <meta property='twitter:title' content='Neville Brem' />
+    <meta property='og:description' content='Linktree of 76RAW' />
+    <meta property='twitter:description' content='Linktree of 76RAW' />
+    <meta property='twitter:title' content='76RAW' />
     <meta property='twitter:image' content='favicon.png' />
     <meta name='twitter:card' content='summary' />
     <meta name='twitter:site' content='@BremNeville' />
-    <title>Links of Neville Brem</title>
+    <title>76RAW</title>
     <style>
       @font-face {
         font-family: Geist;
@@ -53,7 +58,8 @@ const links: Link[] = [
     class='bg-[#1e1e1e] flex justify-center items-center w-screen h-screen font-[Geist] text-white'
   >
     <main class='w-[80%] flex flex-col gap-8'>
-      <h1 class='md:text-6xl text-4xl font-black text-center'>Your Name</h1>
+      <h1 class='md:text-6xl text-4xl font-black text-center'>76RAW </h1>
+      <p class="md:text2xl text-2xl text-center font-bold ">Rasya Adrian</p>
       <div class='grid justify-center gap-4'>
         {
           links.map(({ desc, link, icon }) => {
@@ -63,11 +69,10 @@ const links: Link[] = [
       </div>
       <div class='flex justify-center gap-8'>
         <!-- Put some social links who have a definitive icon here: -->
-        <Chip link='youtube.com/' icon='fa-brands fa-youtube' />
-        <Chip link='github.com/' icon='fa-brands fa-github' />
-        <Chip link='x.com/' icon='fa-brands fa-x-twitter' />
+        <Chip link='youtube.com/@Finowls' icon='fa-brands fa-youtube' />
+        <Chip link='github.com/rawplane' icon='fa-brands fa-github' />
       </div>
-      <p class='text-center mx-auto'>Some additional text, like your email</p>
+      <p class='text-center mx-auto'>Just personal links</p>
     </main>
   </body>
 </html>
