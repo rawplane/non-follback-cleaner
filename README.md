@@ -1,47 +1,109 @@
-# Astro Starter Kit: Minimal
+# 🚀 Auto Unfollow Instagram (Non-Follback Cleaner) - Brave Browser on Linux Mint
 
-```sh
-npm create astro@latest -- --template minimal
+Smart Python automation script to detect and unfollow Instagram accounts that **do not follow back (non-follback)** using a logged-in **Brave Browser** profile session on **Linux Mint**.
+
+---
+
+## 🌟 Key Features
+
+- **Continuous Batch Unfollow (No Re-Scan & No Browser Restart)**:
+  After 1 batch (e.g., 25 accounts) completes unfollowing, you can instantly proceed to the next batch or add a break delay without exiting the program, reopening the browser, or re-scanning followers/following from scratch.
+- **Permanent Automation Profile Session**: Login sessions are permanently stored in an isolated automation directory so your main Brave browser can be used freely anytime.
+- **Automatic Username Detection**: Automatically detects the logged-in Instagram account.
+- **Accurate & Fast Non-Follback Detection**: Scans all *Followers* & *Following* via internal Web API/GraphQL instantly.
+- **Whitelist Support**: Important accounts (friends, family, idols, brands) listed in `whitelist.txt` will never be unfollowed.
+- **Simulation Mode (Dry-Run)**: Test the scanning process and view unfollow simulations without actual clicks.
+- **Safety Features (Anti-Ban & Anti Action-Block)**:
+  - Random safety delay between unfollow actions.
+  - Batch processing (default: 25 accounts) and automatic Action Block (*Try Again Later*) detection.
+- **Multi-language UI Support**: Supports both Indonesian and English Instagram user interfaces.
+- **Export Results**: Automatically saves non-follback account lists to a `.txt` file complete with scan timestamp.
+
+---
+
+## 📁 Directory Structure
+
+```
+auto-unfollow-ig/
+├── config.py             # Configuration file (Brave Linux Mint settings, limits, delays, whitelist)
+├── unfollower.py         # Core Instagram scraping & unfollowing module
+├── main.py               # Main program with colorful interactive CLI menu
+├── whitelist.txt         # List of protected accounts
+├── requirements.txt      # Required Python dependencies
+└── README.md             # Complete documentation and instructions
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/minimal)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/minimal/devcontainer.json)
+---
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## 🛠️ System Requirements
 
-## 🚀 Project Structure
+- **OS**: Linux Mint / Ubuntu / Debian-based
+- **Python**: Python 3.9+
+- **Browser**: Brave Browser (`/usr/bin/brave-browser`)
 
-Inside of your Astro project, you'll see the following folders and files:
+---
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+## 📦 Installation & Usage
+
+1. **Open Terminal in Project Directory**:
+   ```bash
+   cd /home/raw/Downloads/unfollow-ig
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run Main Program**:
+   ```bash
+   python3 main.py
+   ```
+
+---
+
+## 🎮 CLI Menu Options
+
+```
+======================================================================
+     AUTO UNFOLLOW INSTAGRAM (NON-FOLLBACK DETECTOR & CLEANER)
+     Brave Browser Edition (Linux Mint)
+======================================================================
+
+SELECT MENU:
+ [1] 🔍 Scan & Display Non-Follback Accounts (Analysis Only)
+ [2] 🧪 Run Auto Unfollow (DRY-RUN / Simulation)
+ [3] 🚀 Run Auto Unfollow (REAL MODE)
+ [4] 📋 View & Manage Whitelist (Protected Accounts)
+ [5] ⚙️  Check Configuration & Brave Linux Mint Guide
+ [0] 🚪 Exit
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+- **Menu 1**: Scans your followers & following, matches non-followers, displays results on screen, and exports to a `.txt` file.
+- **Menu 2**: Simulates step-by-step unfollow execution (batch) without real clicks.
+- **Menu 3**: Performs real unfollow actions per batch with options to proceed to the next batch immediately or take a break delay.
+- **Menu 4**: Views accounts protected by `whitelist.txt`.
+- **Menu 5**: Views configuration details and automation profile directory info.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+---
 
-Any static assets, like images, can be placed in the `public/` directory.
+## ⚙️ Settings in `config.py`
 
-## 🧞 Commands
+| Parameter | Description | Default |
+| :--- | :--- | :--- |
+| `AUTOMATION_PROFILE_DIR` | Dedicated automation profile directory | `~/.config/auto-unfollow-ig-brave` |
+| `BRAVE_PROFILE_DIR` | Profile name used | `"Default"` |
+| `HEADLESS_MODE` | Hide browser window | `False` |
+| `MAX_UNFOLLOW_LIMIT` | Max unfollow accounts per batch | `25` |
+| `MIN_DELAY_SECONDS` | Minimum delay between unfollows | `1` second |
+| `MAX_DELAY_SECONDS` | Maximum delay between unfollows | `2` seconds |
+| `WHITELIST_FILE` | Protected accounts list file | `"whitelist.txt"` |
 
-All commands are run from the root of the project, from a terminal:
+---
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## 🛡️ Safety Tips to Avoid Instagram Action Blocks
 
-## 👀 Want to learn more?
+1. **Use Batching**: Perform unfollows gradually per batch (e.g., 25 accounts per batch).
+2. **Add Delays Between Batches**: Use pause/break options (e.g., `J 30` to rest for 30-60 seconds) before continuing to the next batch.
+3. **Populate Whitelist**: Add close friends, public figures, or business accounts to `whitelist.txt`.
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
