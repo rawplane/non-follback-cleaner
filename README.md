@@ -47,7 +47,7 @@ auto-unfollow-ig/
 
 1. **Open Terminal in Project Directory**:
    ```bash
-   cd /home/raw/Downloads/unfollow-ig
+   cd unfollow-ig
    ```
 
 2. **Install Dependencies**:
