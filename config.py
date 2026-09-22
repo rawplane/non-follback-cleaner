@@ -60,14 +60,14 @@ MAX_UNFOLLOW_LIMIT = 25
 
 # Random wait time (seconds) between unfollow actions (Safety Human-like Delay)
 # Prevents automatic bot detection by Instagram (minimum 8-18 seconds recommended)
-MIN_DELAY_SECONDS = 1
-MAX_DELAY_SECONDS = 2
+MIN_DELAY_SECONDS = 2
+MAX_DELAY_SECONDS = 5
 
 # Scroll delay time for follower/following modal (seconds)
-SCROLL_DELAY_SECONDS = 1.8
+SCROLL_DELAY_SECONDS = 1.5
 
 # Web element timeout wait time (seconds)
-PAGE_TIMEOUT_SECONDS = 25
+PAGE_TIMEOUT_SECONDS = 30
 
 # Default Simulation Mode (Dry Run)
 # True  = Simulation only without actual unfollow clicks.
@@ -91,8 +91,10 @@ CONFIG_WHITELIST = [
 
 
 def load_whitelist() -> set:
-    """Reads the whitelist set from file and config."""
-    whitelist = {u.strip().lower().lstrip("@") for u in CONFIG_WHITELIST if u.strip()}
+    """Reads the whitelist set from database, file, and config."""
+    import storage
+    whitelist = storage.get_whitelist()
+    whitelist.update({u.strip().lower().lstrip("@") for u in CONFIG_WHITELIST if u.strip()})
     
     if os.path.exists(WHITELIST_FILE):
         try:
@@ -105,3 +107,4 @@ def load_whitelist() -> set:
             print(f"[Warning] Failed to read {WHITELIST_FILE}: {e}")
             
     return whitelist
+

@@ -1,41 +1,38 @@
-# 🚀 Auto Unfollow Instagram (Non-Follback Cleaner) - Brave Browser on Linux Mint
+# 🚀 Auto Unfollow Instagram (Non-Follback Cleaner) - Modernized Edition
 
-Smart Python automation script to detect and unfollow Instagram accounts that **do not follow back (non-follback)** using a logged-in **Brave Browser** profile session on **Linux Mint**.
-
----
-
-## 🌟 Key Features
-
-- **Continuous Batch Unfollow (No Re-Scan & No Browser Restart)**:
-  After 1 batch (e.g., 25 accounts) completes unfollowing, you can instantly proceed to the next batch or add a break delay without exiting the program, reopening the browser, or re-scanning followers/following from scratch.
-- **Permanent Automation Profile Session**: Login sessions are permanently stored in an isolated automation directory so your main Brave browser can be used freely anytime.
-- **Automatic Username Detection**: Automatically detects the logged-in Instagram account.
-- **Accurate & Fast Non-Follback Detection**: Scans all *Followers* & *Following* via internal Web API/GraphQL instantly.
-- **Whitelist Support**: Important accounts (friends, family, idols, brands) listed in `whitelist.txt` will never be unfollowed.
-- **Simulation Mode (Dry-Run)**: Test the scanning process and view unfollow simulations without actual clicks.
-- **Safety Features (Anti-Ban & Anti Action-Block)**:
-  - Random safety delay between unfollow actions.
-  - Batch processing (default: 25 accounts) and automatic Action Block (*Try Again Later*) detection.
-- **Multi-language UI Support**: Supports both Indonesian and English Instagram user interfaces.
-- **Export Results**: Automatically saves non-follback account lists to a `.txt` file complete with scan timestamp.
+Script automasi modern Python untuk mendeteksi dan unfollow akun Instagram yang **tidak follow back (non-follback)** menggunakan sesi profil **Brave Browser** berbasis **Playwright**, antarmuka terminal **Rich + Typer**, dan database lokal **SQLite**.
 
 ---
 
-## 📁 Directory Structure
+## 🌟 Fitur Utama & Peningkatan Modern
+
+- **Playwright Persistent Context Engine**: Menggantikan Selenium webdriver. Lebih ringan, minim penggunaan RAM, dan anti-detection stealth tingkat tinggi.
+- **Direct Web API & GraphQL Scraping**: Pengambilan 100% data Following & Followers secara instan via internal API tanpa manipulasi DOM yang rapuh.
+- **Direct API Unfollow with Fallback**: Eksekusi unfollow langsung via endpoint API authenticated origin Instagram dengan fallback mulus ke UI interaction.
+- **Modern Terminal UI (Rich & Typer)**: Dashboard terminal elegan, visual table modern, real-time progress bar, dan status countdown interaktif.
+- **Dual Mode CLI**: Dapat dijalankan lewat interactive menu interaktif (`python3 main.py`) ataupun CLI subcommands (`python3 main.py scan`, `unfollow`, `whitelist`, `logs`).
+- **SQLite Audit & History Tracking**: Menyimpan hasil scan, daftar whitelist, dan log setiap aksi eksekusi ke file database lokal `cleaner.db`.
+- **Anti-Ban & Safety Delays**: Delay acak terdistribusi, pengelompokan batch otomatis, serta deteksi respons Action Block (*Try Again Later* / Rate Limit 429).
+
+---
+
+## 📁 Struktur Direktori
 
 ```
-auto-unfollow-ig/
-├── config.py             # Configuration file (Brave Linux Mint settings, limits, delays, whitelist)
-├── unfollower.py         # Core Instagram scraping & unfollowing module
-├── main.py               # Main program with colorful interactive CLI menu
-├── whitelist.txt         # List of protected accounts
-├── requirements.txt      # Required Python dependencies
-└── README.md             # Complete documentation and instructions
+non-follback-cleaner/
+├── config.py             # Konfigurasi browser, delay, dan batas eksekusi
+├── storage.py            # Modul database SQLite (whitelist, history, action logs)
+├── unfollower.py         # Playwright core engine & direct API client
+├── main.py               # Antarmuka CLI Typer + Rich TUI Dashboard
+├── test_cleaner.py       # Unit tests verifikasi parser, storage & logic
+├── requirements.txt      # Dependensi modern (playwright, httpx, rich, typer)
+├── cleaner.db            # Database SQLite lokal (dibuat otomatis)
+└── README.md             # Dokumentasi proyek
 ```
 
 ---
 
-## 🛠️ System Requirements
+## 🛠️ Kebutuhan Sistem
 
 - **OS**: Linux Mint / Ubuntu / Debian-based
 - **Python**: Python 3.9+
@@ -43,67 +40,55 @@ auto-unfollow-ig/
 
 ---
 
-## 📦 Installation & Usage
+## 📦 Instalasi & Menjalankan
 
-1. **Open Terminal in Project Directory**:
-   ```bash
-   cd unfollow-ig
-   ```
-
-2. **Install Dependencies**:
+1. **Install Dependensi**:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run Main Program**:
+2. **Jalankan Menu Interaktif (TUI)**:
    ```bash
    python3 main.py
    ```
 
+3. **Atau Gunakan Direct CLI Subcommand**:
+   - **Scan Non-Follback**:
+     ```bash
+     python3 main.py scan
+     ```
+   - **Simulasi Unfollow (Dry-Run)**:
+     ```bash
+     python3 main.py unfollow --dry-run
+     ```
+   - **Unfollow Nyata (Real Mode)**:
+     ```bash
+     python3 main.py unfollow --real --batch-size 20
+     ```
+   - **Kelola Whitelist**:
+     ```bash
+     python3 main.py whitelist list
+     python3 main.py whitelist add username_teman
+     python3 main.py whitelist remove username_teman
+     ```
+   - **Cek Riwayat Log Aktivitas**:
+     ```bash
+     python3 main.py logs --limit 20
+     ```
+   - **Cek Konfigurasi**:
+     ```bash
+     python3 main.py config
+     ```
+
 ---
 
-## 🎮 CLI Menu Options
+## ⚙️ Pengaturan di `config.py`
 
-```
-======================================================================
-     AUTO UNFOLLOW INSTAGRAM (NON-FOLLBACK DETECTOR & CLEANER)
-     Brave Browser Edition (Linux Mint)
-======================================================================
-
-SELECT MENU:
- [1] 🔍 Scan & Display Non-Follback Accounts (Analysis Only)
- [2] 🧪 Run Auto Unfollow (DRY-RUN / Simulation)
- [3] 🚀 Run Auto Unfollow (REAL MODE)
- [4] 📋 View & Manage Whitelist (Protected Accounts)
- [5] ⚙️  Check Configuration & Brave Linux Mint Guide
- [0] 🚪 Exit
-```
-
-- **Menu 1**: Scans your followers & following, matches non-followers, displays results on screen, and exports to a `.txt` file.
-- **Menu 2**: Simulates step-by-step unfollow execution (batch) without real clicks.
-- **Menu 3**: Performs real unfollow actions per batch with options to proceed to the next batch immediately or take a break delay.
-- **Menu 4**: Views accounts protected by `whitelist.txt`.
-- **Menu 5**: Views configuration details and automation profile directory info.
-
----
-
-## ⚙️ Settings in `config.py`
-
-| Parameter | Description | Default |
+| Parameter | Deskripsi | Default |
 | :--- | :--- | :--- |
-| `AUTOMATION_PROFILE_DIR` | Dedicated automation profile directory | `~/.config/auto-unfollow-ig-brave` |
-| `BRAVE_PROFILE_DIR` | Profile name used | `"Default"` |
-| `HEADLESS_MODE` | Hide browser window | `False` |
-| `MAX_UNFOLLOW_LIMIT` | Max unfollow accounts per batch | `25` |
-| `MIN_DELAY_SECONDS` | Minimum delay between unfollows | `1` second |
-| `MAX_DELAY_SECONDS` | Maximum delay between unfollows | `2` seconds |
-| `WHITELIST_FILE` | Protected accounts list file | `"whitelist.txt"` |
-
----
-
-## 🛡️ Safety Tips to Avoid Instagram Action Blocks
-
-1. **Use Batching**: Perform unfollows gradually per batch (e.g., 25 accounts per batch).
-2. **Add Delays Between Batches**: Use pause/break options (e.g., `J 30` to rest for 30-60 seconds) before continuing to the next batch.
-3. **Populate Whitelist**: Add close friends, public figures, or business accounts to `whitelist.txt`.
-
+| `AUTOMATION_PROFILE_DIR` | Direktori sesi profil otomatisasi browser | `~/.config/auto-unfollow-ig-brave` |
+| `HEADLESS_MODE` | Sembunyikan jendela browser saat berjalan | `False` |
+| `MAX_UNFOLLOW_LIMIT` | Batas maksimum unfollow per batch | `25` |
+| `MIN_DELAY_SECONDS` | Jeda minimum antar aksi unfollow | `2` detik |
+| `MAX_DELAY_SECONDS` | Jeda maksimum antar aksi unfollow | `5` detik |
+| `WHITELIST_FILE` | File fallback whitelist eksternal | `"whitelist.txt"` |
