@@ -23,15 +23,20 @@ def find_brave_binary() -> str:
         os.path.expanduser("~/.local/share/flatpak/exports/bin/com.brave.Browser"),
         "/var/lib/flatpak/exports/bin/com.brave.Browser",
         "/snap/bin/brave",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
     ]
     for path in possible_paths:
         if os.path.exists(path):
             return path
     
     # Fallback to shutil.which if available in PATH
-    which_path = shutil.which("brave-browser") or shutil.which("brave")
-    if which_path:
-        return which_path
+    for b in ["brave-browser", "brave", "google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]:
+        which_path = shutil.which(b)
+        if which_path:
+            return which_path
 
     return "/usr/bin/brave-browser"
 
@@ -60,8 +65,8 @@ MAX_UNFOLLOW_LIMIT = 25
 
 # Random wait time (seconds) between unfollow actions (Safety Human-like Delay)
 # Prevents automatic bot detection by Instagram (minimum 8-18 seconds recommended)
-MIN_DELAY_SECONDS = 2
-MAX_DELAY_SECONDS = 5
+MIN_DELAY_SECONDS = 4
+MAX_DELAY_SECONDS = 8
 
 # Scroll delay time for follower/following modal (seconds)
 SCROLL_DELAY_SECONDS = 1.5

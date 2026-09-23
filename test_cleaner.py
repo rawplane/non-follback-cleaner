@@ -40,6 +40,31 @@ class TestCleaner(unittest.TestCase):
         self.assertTrue(success)
         self.assertIn("[SIMULATION]", msg)
 
+    def test_binary_search_fallback(self):
+        import config
+        binary = config.find_brave_binary()
+        self.assertTrue(isinstance(binary, str))
+        self.assertTrue(len(binary) > 0)
+
+    def test_scan_safety_check(self):
+        unfollower = InstagramUnfollower(dry_run=True)
+        unfollower.my_username = "tester"
+        # Mock get_profile_info to return (uid, 100 following, 50 followers)
+        unfollower.get_profile_info = lambda uname: ("123", 100, 50)
+        # Mock fetch_user_list_api to simulate following=10 users, followers=0 users (API failure)
+        unfollower.fetch_user_list_api = lambda uid, ltype, total, cb=None: (
+            ["u1", "u2"] if ltype == "following" else []
+        )
+        # Mock current_page.goto
+        class DummyPage:
+            def goto(self, *args, **kwargs):
+                pass
+        unfollower.page = DummyPage()
+
+        with self.assertRaises(RuntimeError) as ctx:
+            unfollower.scan_non_followers()
+        self.assertIn("Gagal mengambil daftar followers", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

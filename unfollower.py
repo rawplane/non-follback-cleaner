@@ -67,6 +67,14 @@ class InstagramUnfollower:
             ignore_default_args=["--enable-automation"]
         )
 
+        # Anti-detection stealth init script
+        self.context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+            window.chrome = window.chrome || { runtime: {} };
+        """)
+
         self.page = self.context.pages[0] if self.context.pages else self.context.new_page()
         self.page.set_default_timeout(config.PAGE_TIMEOUT_SECONDS * 1000)
 
@@ -84,12 +92,28 @@ class InstagramUnfollower:
         assert self.context is not None
         return self.context
 
+    def get_csrf_token(self) -> str:
+        """Retrieves csrftoken from context cookies."""
+        try:
+            for c in self.current_context.cookies("https://www.instagram.com"):
+                if c.get("name") == "csrftoken":
+                    return str(c.get("value", ""))
+        except Exception:
+            pass
+        return ""
+
     def is_logged_in(self) -> bool:
         """Checks whether Instagram session cookie or auth elements exist."""
         if not self.context or not self.page:
             return False
 
         try:
+            current_url = (self.current_page.url or "").lower()
+            if "accounts/login" in current_url or "accounts/emailsignup" in current_url:
+                return False
+            if "challenge" in current_url or "checkpoint" in current_url:
+                return False
+
             cookies = {
                 str(c.get("name", "")): str(c.get("value", ""))
                 for c in self.current_context.cookies("https://www.instagram.com")
@@ -144,7 +168,43 @@ class InstagramUnfollower:
         if self.my_username:
             return self.my_username
 
+        if config.INSTAGRAM_USERNAME:
+            self.my_username = config.INSTAGRAM_USERNAME.strip().lower()
+            return self.my_username
+
         self.init_browser()
+
+        # Try ds_user_id from cookies to query /users/{uid}/info/
+        try:
+            cookies = {
+                str(c.get("name", "")): str(c.get("value", ""))
+                for c in self.current_context.cookies("https://www.instagram.com")
+            }
+            ds_user_id = cookies.get("ds_user_id")
+            if ds_user_id:
+                self.user_id = ds_user_id
+                uname = self.current_page.evaluate(r"""async (uid) => {
+                    try {
+                        const r = await fetch('https://www.instagram.com/api/v1/users/' + uid + '/info/', {
+                            headers: {
+                                'X-IG-App-ID': '936619743392459',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const d = await r.json();
+                        if (d.user && d.user.username) {
+                            return d.user.username;
+                        }
+                    } catch (e) {}
+                    return null;
+                }""", ds_user_id)
+                if uname:
+                    self.my_username = str(uname).strip().lower()
+                    return self.my_username
+        except Exception:
+            pass
+
+        # Try DOM link extraction
         try:
             detected = self.current_page.evaluate(r"""() => {
                 const links = document.querySelectorAll('a[role="link"], a');
@@ -164,20 +224,8 @@ class InstagramUnfollower:
                 return null;
             }""")
             if detected:
-                self.my_username = detected
+                self.my_username = str(detected).strip().lower()
                 return self.my_username
-        except Exception:
-            pass
-
-        # Fallback to cookies
-        try:
-            cookies = {
-                str(c.get("name", "")): str(c.get("value", ""))
-                for c in self.current_context.cookies("https://www.instagram.com")
-            }
-            ds_user_id = cookies.get("ds_user_id")
-            if ds_user_id:
-                self.user_id = ds_user_id
         except Exception:
             pass
 
@@ -186,6 +234,36 @@ class InstagramUnfollower:
     def get_profile_info(self, username: str) -> Tuple[str, int, int]:
         """Fetches User ID, Total Following, and Followers count via internal API."""
         self.init_browser()
+        target_uid = self.user_ids.get(username.lower()) or (self.user_id if username.lower() == self.my_username.lower() else "")
+        if target_uid:
+            try:
+                info = self.current_page.evaluate(r"""async (uid) => {
+                    try {
+                        const r = await fetch('https://www.instagram.com/api/v1/users/' + uid + '/info/', {
+                            headers: {
+                                'X-IG-App-ID': '936619743392459',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const d = await r.json();
+                        if (d.user) {
+                            return {
+                                success: true,
+                                id: String(d.user.pk || uid),
+                                following_count: d.user.following_count || 0,
+                                followers_count: d.user.follower_count || 0
+                            };
+                        }
+                    } catch (e) {}
+                    return { success: false };
+                }""", target_uid)
+                if info and info.get("success"):
+                    uid = str(info["id"])
+                    self.user_ids[username.lower()] = uid
+                    return uid, int(info["following_count"]), int(info["followers_count"])
+            except Exception:
+                pass
+
         try:
             info = self.current_page.evaluate(r"""async (uname) => {
                 try {
@@ -228,20 +306,21 @@ class InstagramUnfollower:
         target_count: int,
         progress_callback: Optional[Callable[[int, int], None]] = None
     ) -> List[str]:
-        """Collects 100% of Following or Followers via internal GraphQL / REST API endpoints."""
+        """Collects 100% of Following or Followers via internal REST API endpoints."""
         collected_users: List[str] = []
         max_id = ""
         page = 1
+        csrf_token = self.get_csrf_token()
 
         while True:
             try:
-                res = self.current_page.evaluate(r"""async ([userId, listType, maxId]) => {
+                res = self.current_page.evaluate(r"""async ([userId, listType, maxId, passedCsrf]) => {
                     function getCookie(name) {
                         const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
                         return match ? decodeURIComponent(match[3]) : null;
                     }
 
-                    const csrfToken = getCookie('csrftoken') || '';
+                    const csrfToken = passedCsrf || getCookie('csrftoken') || '';
                     const headers = {
                         'X-CSRFToken': csrfToken,
                         'X-IG-App-ID': '936619743392459',
@@ -249,49 +328,24 @@ class InstagramUnfollower:
                         'X-ASBD-ID': '129477'
                     };
 
-                    if (listType === 'followers') {
-                        const variables = { id: userId, first: 50 };
-                        if (maxId) variables.after = maxId;
-
-                        const url = 'https://www.instagram.com/graphql/query/?query_hash=5aefa9893005572d237da5068082d8d5&variables=' + encodeURIComponent(JSON.stringify(variables));
-                        try {
-                            const r = await fetch(url, { headers });
-                            const d = await r.json();
-                            const edge = (d.data && d.data.user && d.data.user.edge_followed_by) || {};
-                            const edges = edge.edges || [];
-                            const parsed = edges.map(e => ({
-                                username: (e.node?.username || '').toLowerCase(),
-                                id: String(e.node?.id || '')
-                            }));
-                            const pageInfo = edge.page_info || {};
-                            return {
-                                success: true,
-                                users: parsed,
-                                next_max_id: pageInfo.has_next_page ? pageInfo.end_cursor : null
-                            };
-                        } catch (err) {
-                            return { success: false, error: err.toString() };
-                        }
-                    } else {
-                        const url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/following/?count=200' + (maxId ? '&max_id=' + encodeURIComponent(maxId) : '');
-                        try {
-                            const r = await fetch(url, { headers });
-                            const d = await r.json();
-                            const rawUsers = d.users || [];
-                            const parsed = rawUsers.map(u => ({
-                                username: (u.username || '').toLowerCase(),
-                                id: String(u.pk || u.id || u.pk_id || '')
-                            }));
-                            return {
-                                success: true,
-                                users: parsed,
-                                next_max_id: d.next_max_id || null
-                            };
-                        } catch (err) {
-                            return { success: false, error: err.toString() };
-                        }
+                    const url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/' + listType + '/?count=200' + (maxId ? '&max_id=' + encodeURIComponent(maxId) : '');
+                    try {
+                        const r = await fetch(url, { headers, credentials: 'include' });
+                        const d = await r.json();
+                        const rawUsers = d.users || [];
+                        const parsed = rawUsers.map(u => ({
+                            username: (u.username || '').toLowerCase(),
+                            id: String(u.pk || u.id || u.pk_id || '')
+                        }));
+                        return {
+                            success: true,
+                            users: parsed,
+                            next_max_id: d.next_max_id ? String(d.next_max_id) : null
+                        };
+                    } catch (err) {
+                        return { success: false, error: err.toString() };
                     }
-                }""", [user_id, list_type, max_id])
+                }""", [user_id, list_type, max_id, csrf_token])
 
                 if not res or not res.get("success"):
                     break
@@ -312,7 +366,7 @@ class InstagramUnfollower:
                 next_max_id = res.get("next_max_id")
                 if next_max_id and len(batch) > 0:
                     max_id = str(next_max_id)
-                    time.sleep(0.2 + random.uniform(0.05, 0.15))
+                    time.sleep(0.8 + random.uniform(0.2, 0.5))
                     page += 1
                 else:
                     break
@@ -342,7 +396,7 @@ class InstagramUnfollower:
                 progress_callback("following", cur, total)
 
         following = self.fetch_user_list_api(user_id, "following", following_total, cb_following)
-        time.sleep(0.5)
+        time.sleep(1.0)
 
         # 2. Fetch Followers
         def cb_followers(cur, total):
@@ -350,6 +404,13 @@ class InstagramUnfollower:
                 progress_callback("followers", cur, total)
 
         followers = self.fetch_user_list_api(user_id, "followers", followers_total, cb_followers)
+
+        # Safety check: abort if followers is 0 while profile indicates follower_count > 5
+        if followers_total > 5 and len(followers) == 0:
+            raise RuntimeError(
+                f"Gagal mengambil daftar followers (0 followers terdeteksi dari profil {followers_total}). "
+                "Scan dibatalkan otomatis untuk mencegah false-positive unfollow massal."
+            )
 
         followers_set = set(followers)
         non_followers = [
@@ -365,16 +426,18 @@ class InstagramUnfollower:
     def unfollow_api(self, target_user_id: str) -> Tuple[bool, str]:
         """Calls direct Instagram friendship destroy endpoint inside authenticated browser origin."""
         try:
-            res = self.current_page.evaluate(r"""async (uid) => {
+            csrf_token = self.get_csrf_token()
+            res = self.current_page.evaluate(r"""async ([uid, passedCsrf]) => {
                 function getCookie(name) {
                     const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
                     return match ? decodeURIComponent(match[3]) : null;
                 }
 
-                const csrfToken = getCookie('csrftoken') || '';
+                const csrfToken = passedCsrf || getCookie('csrftoken') || '';
                 try {
                     const response = await fetch('https://www.instagram.com/api/v1/friendships/destroy/' + uid + '/', {
                         method: 'POST',
+                        credentials: 'include',
                         headers: {
                             'X-CSRFToken': csrfToken,
                             'X-IG-App-ID': '936619743392459',
@@ -388,7 +451,7 @@ class InstagramUnfollower:
                 } catch (err) {
                     return { status_code: 0, error: err.toString() };
                 }
-            }""", target_user_id)
+            }""", [target_user_id, csrf_token])
 
             if not res:
                 return False, "No response from API"
